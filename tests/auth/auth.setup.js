@@ -1,5 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const { LoginPage } = require('../../pages/auth/LoginPage');
+const { assertNonEmptyStorageState } = require('../../utils/storageState');
 const fs = require('node:fs/promises');
 
 for (const role of ['admin', 'seller', 'customer']) {
@@ -15,9 +16,7 @@ for (const role of ['admin', 'seller', 'customer']) {
       await login.login(email, password);
       await expect(page).not.toHaveURL(/\/login(?:\?|$)/);
       const state = await context.storageState();
-      if (!state.cookies.length && !state.origins.some(o => o.localStorage?.length)) {
-        throw new Error(`${role[0].toUpperCase() + role.slice(1)} authentication failed: storage state is empty.`);
-      }
+      assertNonEmptyStorageState(state, role[0].toUpperCase() + role.slice(1));
       await fs.mkdir('auth', { recursive: true });
       const path = `auth/${role}.json`;
       // Only persist after verifying that the state actually authenticates a new context.
